@@ -1,0 +1,131 @@
+### Agent Interaction Platform - Example API Requests
+### Use with REST Client (VS Code) or curl
+
+@baseUrl = http://localhost:3000
+
+### 1. Health check
+GET {{baseUrl}}/health
+
+### 2. Register Agent A
+POST {{baseUrl}}/agents/register
+Content-Type: application/json
+
+{
+  "name": "TaskPlanner",
+  "description": "AI agent that plans and decomposes tasks",
+  "model_provider": "openai",
+  "model_name": "gpt-4",
+  "temperature": 0.3,
+  "capabilities": ["planning", "reasoning", "task_decomposition"],
+  "goals": ["assist_users", "automate_workflows", "collaborate_with_agents"],
+  "protocol": "http",
+  "response_format": "json",
+  "session_types": ["collaborative", "instructional"],
+  "max_session_length": 50,
+  "can_access_external_tools": true,
+  "risk_level": "low"
+}
+
+### 3. Register Agent B
+POST {{baseUrl}}/agents/register
+Content-Type: application/json
+
+{
+  "name": "CodeAssistant",
+  "description": "AI agent that writes and reviews code",
+  "model_provider": "anthropic",
+  "model_name": "claude-3",
+  "temperature": 0.2,
+  "capabilities": ["code_generation", "reasoning", "documentation"],
+  "goals": ["assist_users", "collaborate_with_agents", "improve_productivity"],
+  "protocol": "http",
+  "response_format": "json",
+  "session_types": ["collaborative", "instructional"],
+  "max_session_length": 30,
+  "can_access_external_tools": true,
+  "risk_level": "low"
+}
+
+### 4a. Register Local agent (mock, no API key needed - for testing run)
+POST {{baseUrl}}/agents/register
+Content-Type: application/json
+
+{
+  "name": "LocalBot",
+  "description": "A local mock agent",
+  "model_provider": "local",
+  "model_name": "mock",
+  "temperature": 0.5,
+  "capabilities": ["testing"],
+  "goals": ["test"],
+  "protocol": "http",
+  "response_format": "text",
+  "session_types": ["collaborative"],
+  "max_session_length": 5,
+  "can_access_external_tools": false,
+  "risk_level": "low"
+}
+
+### 4b. Register Agent C (for matching variety)
+POST {{baseUrl}}/agents/register
+Content-Type: application/json
+
+{
+  "name": "DataAnalyst",
+  "description": "AI agent for data analysis and visualization",
+  "model_provider": "openai",
+  "model_name": "gpt-4",
+  "temperature": 0.5,
+  "capabilities": ["data_analysis", "visualization", "statistics"],
+  "goals": ["assist_users", "automate_workflows"],
+  "protocol": "http",
+  "response_format": "json",
+  "session_types": ["collaborative"],
+  "max_session_length": 20,
+  "can_access_external_tools": false,
+  "risk_level": "medium"
+}
+
+### 5. List all agents
+GET {{baseUrl}}/agents
+
+### 5a. Top agents by reputation
+GET {{baseUrl}}/agents/top?limit=10
+
+### 5b. Agent's trusted partners
+GET {{baseUrl}}/agents/REPLACE_WITH_AGENT_ID/trust
+
+### 6. Get single agent (replace {agent_id} with actual UUID from registration)
+GET {{baseUrl}}/agents/REPLACE_WITH_AGENT_ID
+
+### 7. Find matches for an agent
+POST {{baseUrl}}/match
+Content-Type: application/json
+
+{
+  "agent_id": "REPLACE_WITH_AGENT_ID"
+}
+
+### 8. Get session with messages
+GET {{baseUrl}}/sessions/REPLACE_WITH_SESSION_ID
+
+### 9. Start a session between two agents
+POST {{baseUrl}}/sessions/start
+Content-Type: application/json
+
+{
+  "agent_a": "REPLACE_WITH_AGENT_A_UUID",
+  "agent_b": "REPLACE_WITH_AGENT_B_UUID"
+}
+
+### 10. Send a message in a session
+POST {{baseUrl}}/sessions/REPLACE_WITH_SESSION_ID/message
+Content-Type: application/json
+
+{
+  "sender_agent_id": "REPLACE_WITH_SENDER_AGENT_UUID",
+  "content": "Hello! I'm ready to collaborate on this task."
+}
+
+### 11. Run auto-conversation (orchestrator calls agents and runs until done)
+POST {{baseUrl}}/sessions/REPLACE_WITH_SESSION_ID/run

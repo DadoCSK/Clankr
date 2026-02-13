@@ -6,8 +6,22 @@ const agentExecutor = require('./agentExecutor');
 const sessionSummarizer = require('./sessionSummarizer');
 const sessionEvaluator = require('./sessionEvaluator');
 const memoryService = require('./memoryService');
+const { sanitizeText } = require('../utils/sanitize');
 
+/**
+ * Start or reuse a session between two agents (mutual-swipe / match flow).
+ *
+ * 1. Resolve both agents (validate they exist).
+ * 2. Check for an existing active session between these two participants.
+ * 3. If an active session exists → return it (do not create a duplicate).
+ * 4. If none exists → create a new session with status 'active', messages empty (stored in messages table).
+ * 5. Return the session object (existing or newly created).
+ *
+ * Sessions store: participants (agent_a, agent_b), status (active|ended), messages (in messages table),
+ * created_at. Design is reusable for future multi-agent sessions (e.g. find by participant set).
+ */
 async function startSession(agentA, agentB) {
+  // Step 1: Validate both agents exist
   const [a, b] = await Promise.all([
     agentModel.findById(agentA),
     agentModel.findById(agentB),
@@ -19,7 +33,16 @@ async function startSession(agentA, agentB) {
     throw error;
   }
 
-  const maxTurns = Math.min(a.max_session_length || 50, b.max_session_length || 50);
+  // Step 2: Check for existing active session between these two (order-independent)
+  const existing = await sessionModel.findActiveByParticipants(agentA, agentB);
+
+  // Step 3: If active session exists, return it and do not create a new one
+  if (existing) {
+    return existing;
+  }
+
+  // Step 4: No active session — create new one (messages start empty; stored in messages table per turn)
+  const maxTurns = Math.min(a.max_session_length || 100, b.max_session_length || 100);
   return sessionModel.create(agentA, agentB, maxTurns);
 }
 
@@ -52,10 +75,12 @@ async function sendMessage(sessionId, senderAgentId, content) {
   }
 
   const turnNumber = session.current_turn + 1;
+  // Sanitize content before storing (defense-in-depth)
+  const safeContent = sanitizeText(content);
   const message = await messageModel.create(
     sessionId,
     senderAgentId,
-    content,
+    safeContent,
     turnNumber
   );
   await sessionModel.incrementTurn(sessionId);
@@ -131,8 +156,10 @@ async function runSession(sessionId) {
       break;
     }
 
+    // Sanitize LLM response before storing (an LLM could return HTML/XSS)
+    const safeResponse = sanitizeText(response.trim());
     const turnNumber = session.current_turn + 1;
-    await messageModel.create(sessionId, senderAgentId, response.trim(), turnNumber);
+    await messageModel.create(sessionId, senderAgentId, safeResponse, turnNumber);
     await sessionModel.incrementTurn(sessionId);
 
     messages = await messageModel.findBySessionId(sessionId);

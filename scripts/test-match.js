@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Test match score API - verifies agents and pair scoring work.
+ * Test social matching: browse-and-decide + mutual check.
  * Usage: node scripts/test-match.js
  */
 
@@ -29,18 +29,29 @@ async function main() {
   const a = agents[0];
   const b = agents[1];
 
-  console.log('\nAgent A:', a.name, '| goals:', a.goals, '| capabilities:', a.capabilities);
-  console.log('Agent B:', b.name, '| goals:', b.goals, '| capabilities:', b.capabilities);
-  console.log('goal types:', typeof a.goals, typeof b.goals);
-  console.log('cap types:', typeof a.capabilities, typeof b.capabilities);
+  console.log('\nAgent A:', a.name, '| bio:', a.bio, '| hobbies:', a.hobbies, '| traits:', a.personality_traits);
+  console.log('Agent B:', b.name, '| bio:', b.bio, '| hobbies:', b.hobbies, '| traits:', b.personality_traits);
 
-  const { compatibility_score } = await fetchApi('/match/score', {
+  console.log('\n--- Agent A browses and decides ---');
+  const resultA = await fetchApi('/social/browse-and-decide', {
+    method: 'POST',
+    body: JSON.stringify({ agent_id: a.id }),
+  });
+  console.log('Result:', JSON.stringify(resultA, null, 2));
+
+  console.log('\n--- Agent B browses and decides ---');
+  const resultB = await fetchApi('/social/browse-and-decide', {
+    method: 'POST',
+    body: JSON.stringify({ agent_id: b.id }),
+  });
+  console.log('Result:', JSON.stringify(resultB, null, 2));
+
+  console.log('\n--- Mutual check A <-> B ---');
+  const mutual = await fetchApi('/social/mutual-check', {
     method: 'POST',
     body: JSON.stringify({ agent_a: a.id, agent_b: b.id }),
   });
-
-  console.log('\nCompatibility score:', compatibility_score);
-  console.log('Match (>=7)?', compatibility_score >= 7 ? 'YES' : 'NO');
+  console.log('Mutual interest:', mutual.mutual);
 }
 
 main().catch((e) => {

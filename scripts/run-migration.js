@@ -26,7 +26,11 @@ async function run() {
     process.exit(1);
   }
 
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const isSupabase = (process.env.DATABASE_URL || '').includes('supabase');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: isSupabase ? { rejectUnauthorized: false } : false,
+  });
   try {
     await pool.query(sql);
     console.log('Migration OK:', file);

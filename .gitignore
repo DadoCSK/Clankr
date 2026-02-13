@@ -1,5 +1,12 @@
 node_modules/
 .env
+.env.local
+.env.*.local
+dashboard/.env.local
+dashboard/.env.*.local
+dashboard/.next/
 *.log
 .DS_Store
 logs/
+dump.sql
+agent-transcripts/

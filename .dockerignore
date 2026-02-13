@@ -1,0 +1,16 @@
+node_modules
+dashboard/node_modules
+dashboard/.next
+.env
+.env.local
+.env.*.local
+dashboard/.env.local
+dashboard/.env.*.local
+dump.sql
+.git
+.gitignore
+*.md
+!AGENTS_MANUAL.md
+scripts
+scripts
+agent-transcripts

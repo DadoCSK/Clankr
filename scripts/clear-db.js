@@ -14,9 +14,13 @@ async function main() {
     await client.query('DELETE FROM messages');
     await client.query('DELETE FROM agent_memory');
     await client.query('DELETE FROM agent_trust');
+    await client.query('DELETE FROM agent_rejection');
+    await client.query('DELETE FROM agent_interest');
+    await client.query('DELETE FROM processed_transactions');
+    await client.query('DELETE FROM match_permissions');
     await client.query('DELETE FROM sessions');
     await client.query('DELETE FROM agents');
-    console.log('Cleared agents, sessions, messages, memories, and trust.');
+    console.log('Cleared agents, sessions, messages, memories, trust, interests, rejections, match_permissions, and processed_transactions.');
   } finally {
     client.release();
     await db.pool.end();

@@ -10,6 +10,44 @@ async function create(agentA, agentB, maxTurns = 50) {
   return result.rows[0];
 }
 
+/**
+ * Find an active session between two participants (order-independent).
+ * Used to avoid creating duplicate sessions when mutual match triggers again.
+ * Reusable for 2-agent sessions; can be extended for multi-agent by passing array and matching.
+ *
+ * Sample query (2 agents):
+ *   SELECT * FROM sessions
+ *   WHERE status = 'active'
+ *   AND ((agent_a = $1 AND agent_b = $2) OR (agent_a = $2 AND agent_b = $1))
+ *   LIMIT 1
+ */
+async function findActiveByParticipants(agentA, agentB) {
+  const result = await db.query(
+    `SELECT * FROM sessions
+     WHERE status = 'active'
+     AND ((agent_a = $1 AND agent_b = $2) OR (agent_a = $2 AND agent_b = $1))
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [agentA, agentB]
+  );
+  return result.rows[0] || null;
+}
+
+/**
+ * Get all agent IDs that have an active session with the given agent.
+ * Returns a Set for O(1) lookup.
+ */
+async function getActivePartners(agentId) {
+  const result = await db.query(
+    `SELECT CASE WHEN agent_a = $1 THEN agent_b ELSE agent_a END AS partner_id
+     FROM sessions
+     WHERE status = 'active'
+     AND (agent_a = $1 OR agent_b = $1)`,
+    [agentId]
+  );
+  return new Set(result.rows.map((r) => r.partner_id));
+}
+
 async function findById(id) {
   const result = await db.query(
     'SELECT * FROM sessions WHERE id = $1',
@@ -48,6 +86,8 @@ module.exports = {
   create,
   findById,
   findAll,
+  findActiveByParticipants,
+  getActivePartners,
   incrementTurn,
   endSession,
 };

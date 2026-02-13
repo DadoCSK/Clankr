@@ -1,12 +1,55 @@
 const formatForModel = require('./historyFormatter').formatForModel;
 const memoryService = require('./memoryService');
+const { sanitizeForPrompt } = require('../utils/sanitize');
 const fs = require('fs');
 const path = require('path');
 
 const MODEL_CALL_TIMEOUT_MS = 10000;
 const EXTERNAL_AGENT_TIMEOUT = parseInt(process.env.EXTERNAL_AGENT_TIMEOUT, 10) || 10000;
-const MAX_RESPONSE_LENGTH = 2000;
+const MAX_RESPONSE_LENGTH = parseInt(process.env.MAX_MESSAGE_LENGTH, 10) || 800;
 const SAVE_CONVERSATIONS = process.env.SAVE_CONVERSATIONS_TO_DISK === 'true';
+
+function ensureArray(val) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/** Build personality-aware system prompt for conversation — casual, short, human-like. */
+function buildSystemContent(agent) {
+  // Sanitize all user-controlled fields before injecting into the prompt
+  const name = sanitizeForPrompt(agent.name || 'Agent');
+  const bio = sanitizeForPrompt(agent.bio || agent.description || '');
+  const hobbies = ensureArray(agent.hobbies).map(sanitizeForPrompt);
+  const traits = ensureArray(agent.personality_traits).map(sanitizeForPrompt);
+
+  let text = `You are ${name}.`;
+  if (bio) text += ` ${bio}`;
+  if (hobbies.length) text += ` Your interests: ${hobbies.join(', ')}.`;
+  if (traits.length) text += ` Your vibe: ${traits.join(', ')}.`;
+
+  text += `
+
+CONVERSATION RULES (follow strictly):
+- Talk like you're texting a friend. Casual, chill, natural.
+- Keep messages SHORT: 1-2 sentences max. Never write paragraphs.
+- Use lowercase freely, slang is fine, abbreviations okay.
+- React naturally — laugh, joke, tease, be curious.
+- Ask questions to keep the convo going.
+- NO essays. NO bullet points. NO formal language. NO monologues.
+- NO meta-commentary about being an AI or agent.
+- Stay in character with your personality and quirks.
+- Hard limit: 300 characters ideal, 500 max.`;
+
+  return text;
+}
 
 function truncateIfNeeded(content) {
   if (!content) return content;
@@ -143,14 +186,15 @@ async function callGemini(agent, conversationHistory) {
   }
 
   const recentMemories = await memoryService.getRecentMemories(agent.id, 5);
-  let systemContent = agent.description || `You are ${agent.name}.`;
+  let systemContent = buildSystemContent(agent);
   if (recentMemories.length > 0) {
-    systemContent += `\n\nPast memories of this agent:\n${recentMemories.join('\n')}`;
+    const safeMemories = recentMemories.map(sanitizeForPrompt);
+    systemContent += `\n\nPast memories of this agent:\n${safeMemories.join('\n')}`;
   }
 
   const contents = conversationHistory.map((m) => ({
     role: m.sender_agent_id === agent.id ? 'model' : 'user',
-    parts: [{ text: m.content }],
+    parts: [{ text: sanitizeForPrompt(m.content) }],
   }));
 
   const model = agent.model_name || 'gemini-2.0-flash-lite';
@@ -203,9 +247,10 @@ async function callOpenAI(agent, conversationHistory) {
   }
 
   const recentMemories = await memoryService.getRecentMemories(agent.id, 5);
-  let systemContent = agent.description || `You are ${agent.name}.`;
+  let systemContent = buildSystemContent(agent);
   if (recentMemories.length > 0) {
-    systemContent += `\n\nPast memories of this agent:\n${recentMemories.join('\n')}`;
+    const safeMemories = recentMemories.map(sanitizeForPrompt);
+    systemContent += `\n\nPast memories of this agent:\n${safeMemories.join('\n')}`;
   }
 
   const messages = [

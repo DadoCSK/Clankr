@@ -1,9 +1,26 @@
 const db = require('../db');
 
+function ensureJsonArray(val) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 async function create(agentData) {
   const {
     name,
     description = '',
+    age = null,
+    bio = null,
+    hobbies = [],
+    personality_traits = [],
     model_provider = 'local',
     model_name = 'mock',
     temperature = 0.7,
@@ -12,7 +29,7 @@ async function create(agentData) {
     protocol,
     response_format,
     session_types = [],
-    max_session_length = 50,
+    max_session_length = 100,
     can_access_external_tools = false,
     risk_level = 'low',
     agent_type = 'internal',
@@ -21,23 +38,28 @@ async function create(agentData) {
 
   const result = await db.query(
     `INSERT INTO agents (
-      name, description, model_provider, model_name, temperature,
+      name, description, age, bio, hobbies, personality_traits,
+      model_provider, model_name, temperature,
       capabilities, goals, protocol, response_format, session_types,
       max_session_length, can_access_external_tools, risk_level,
       agent_type, webhook_url, reputation_score, sessions_completed, sessions_failed
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 0.5, 0, 0)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 0.5, 0, 0)
     RETURNING *`,
     [
       name,
       description,
+      age == null ? null : Number(age),
+      bio == null ? null : String(bio).trim() || null,
+      JSON.stringify(ensureJsonArray(hobbies)),
+      JSON.stringify(ensureJsonArray(personality_traits)),
       model_provider,
       model_name,
       temperature,
-      JSON.stringify(capabilities),
-      JSON.stringify(goals),
+      JSON.stringify(ensureJsonArray(capabilities)),
+      JSON.stringify(ensureJsonArray(goals)),
       protocol,
       response_format,
-      JSON.stringify(session_types),
+      JSON.stringify(ensureJsonArray(session_types)),
       max_session_length,
       can_access_external_tools,
       risk_level,
@@ -64,11 +86,11 @@ async function findAll() {
   return result.rows;
 }
 
-async function findAllExcept(id) {
-  const result = await db.query(
-    'SELECT * FROM agents WHERE id != $1',
-    [id]
-  );
+async function findAllExcept(id, limit = null) {
+  const sql = limit
+    ? 'SELECT * FROM agents WHERE id != $1 ORDER BY created_at DESC LIMIT $2'
+    : 'SELECT * FROM agents WHERE id != $1 ORDER BY created_at DESC';
+  const result = await db.query(sql, limit ? [id, limit] : [id]);
   return result.rows;
 }
 

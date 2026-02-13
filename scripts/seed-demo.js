@@ -32,21 +32,40 @@ const CAPABILITIES = [
   'task_decomposition', 'brainstorming', 'critical_thinking', 'communication',
 ];
 const NAMES = ['Pixel', 'Nova', 'Echo', 'Blaze', 'Muse', 'Zen', 'Cipher', 'Aria', 'Vex', 'Luna'];
-const DESCRIPTIONS = [
-  'You help with creative tasks.', 'You assist with research.', 'You enjoy brainstorming ideas.',
-  'You like building things.', 'You focus on optimization.', 'You explore new possibilities.',
-  'You support collaboration.', 'You design solutions.', 'You analyze and advise.',
-  'You learn and adapt.',
+const BIOS = [
+  'I help with creative tasks and like to keep things light.',
+  'I assist with research and enjoy digging into details.',
+  'I enjoy brainstorming ideas and building on others\' thoughts.',
+  'I like building things and seeing projects come together.',
+  'I focus on optimization and making things run smoothly.',
+  'I explore new possibilities and try different approaches.',
+  'I support collaboration and believe in teamwork.',
+  'I design solutions and care about clean outcomes.',
+  'I analyze and advise with a calm, structured style.',
+  'I learn and adapt; curiosity drives me.',
+];
+const HOBBY_POOL = [
+  'reading', 'coding', 'design', 'music', 'writing', 'research', 'hiking', 'games',
+  'art', 'cooking', 'photography', 'travel', 'movies', 'science', 'philosophy', 'sports',
+];
+const TRAIT_POOL = [
+  'curious', 'calm', 'witty', 'methodical', 'creative', 'supportive', 'direct', 'playful',
+  'thoughtful', 'enthusiastic', 'skeptical', 'warm', 'focused', 'quirky', 'patient',
 ];
 const RISK_LEVELS = ['low', 'medium'];
 
 const agents = [];
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 5; i++) {
   const goals = pickRandom(GOALS, 4 + Math.floor(Math.random() * 4));
   const capabilities = pickRandom(CAPABILITIES, 4 + Math.floor(Math.random() * 4));
+  const hobbies = pickRandom(HOBBY_POOL, 2 + Math.floor(Math.random() * 5));
+  const personality_traits = pickRandom(TRAIT_POOL, 2 + Math.floor(Math.random() * 2));
   agents.push({
     name: NAMES[i],
-    description: DESCRIPTIONS[i],
+    bio: BIOS[i],
+    description: BIOS[i],
+    hobbies,
+    personality_traits,
     model_provider: 'gemini',
     model_name: 'gemini-2.0-flash-lite',
     temperature: 0.2 + Math.random() * 0.6,
@@ -55,7 +74,7 @@ for (let i = 0; i < 10; i++) {
     protocol: 'http',
     response_format: 'json',
     session_types: ['collaborative'],
-    max_session_length: 8 + Math.floor(Math.random() * 6),
+    max_session_length: 100,
     risk_level: RISK_LEVELS[Math.floor(Math.random() * RISK_LEVELS.length)],
   });
 }
@@ -77,7 +96,7 @@ async function main() {
     });
     console.log(`  ✓ ${a.name} → ${agent_id} [${a.goals.join(', ')} | ${a.capabilities.join(', ')}]`);
   }
-  console.log('\nDone. Agents will randomly match based on shared goals/capabilities.');
+  console.log('\nDone. Agents will match via social browse-and-decide (LLM-driven, no scores).');
 }
 
 main().catch((e) => {

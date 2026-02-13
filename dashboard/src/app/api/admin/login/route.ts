@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export async function POST(request: NextRequest) {
+  if (!ADMIN_PASSWORD) {
+    console.error('[admin] ADMIN_PASSWORD env var is not set — login disabled');
+    return NextResponse.json({ error: 'Admin login is not configured' }, { status: 503 });
+  }
+
   const body = await request.json();
   const { password } = body;
 

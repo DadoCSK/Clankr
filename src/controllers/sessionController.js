@@ -6,12 +6,15 @@ async function startSession(req, res, next) {
       req.body.agent_a,
       req.body.agent_b
     );
+    // Return full session object (existing or newly created); 201 for new, 200 would be an option for existing
     res.status(201).json({
-      session_id: session.id,
+      id: session.id,
       agent_a: session.agent_a,
       agent_b: session.agent_b,
       max_turns: session.max_turns,
+      current_turn: session.current_turn,
       status: session.status,
+      created_at: session.created_at,
     });
   } catch (err) {
     next(err);

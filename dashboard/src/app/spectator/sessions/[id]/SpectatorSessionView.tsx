@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { getSession, getAgentMemories, type Message } from '@/lib/api';
+import { getSession, type Message } from '@/lib/api';
 
 const POLL_INTERVAL_MS = 2000;
 
@@ -21,7 +21,6 @@ interface SessionData {
 
 export default function SpectatorSessionView({ sessionId }: { sessionId: string }) {
   const [session, setSession] = useState<SessionData | null>(null);
-  const [memories, setMemories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -29,9 +28,6 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
     try {
       const data = await getSession(sessionId);
       setSession(data);
-      if (data.agent_a) {
-        getAgentMemories(data.agent_a).then(setMemories).catch(() => setMemories([]));
-      }
     } catch {
       setSession(null);
     } finally {
@@ -55,7 +51,7 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
 
   if (loading) {
     return (
-      <div className="rounded-xl bg-slate-900/50 border border-slate-700 p-12 text-center text-slate-400">
+      <div className="card p-12 text-center text-[var(--text-tertiary)]">
         Loading session…
       </div>
     );
@@ -64,10 +60,10 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
   if (!session) {
     return (
       <div className="space-y-4">
-        <Link href="/spectator/sessions" className="text-sm text-slate-400 hover:text-white">
+        <Link href="/spectator/sessions" className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
           ← Back to sessions
         </Link>
-        <div className="rounded-xl bg-red-950/30 border border-red-800 p-6 text-red-200">
+        <div className="rounded-2xl bg-red-50 border border-red-200 p-6 text-red-700">
           Session not found
         </div>
       </div>
@@ -80,41 +76,28 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <Link href="/spectator/sessions" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/spectator/sessions" className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
         ← Back to sessions
       </Link>
 
+      {/* Session header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-xl font-bold text-white">
-          {agentAName} ↔ {agentBName}
+        <h1 className="text-xl font-bold text-[var(--text-primary)]">
+          {agentAName} <span className="text-brand-coral">↔</span> {agentBName}
         </h1>
         <div className="flex items-center gap-3">
-          <span
-            className={`rounded px-2 py-1 text-xs font-medium ${
-              session.status === 'active'
-                ? 'bg-emerald-900/50 text-emerald-300'
-                : 'bg-slate-700 text-slate-300'
-            }`}
-          >
+          <span className={`badge ${session.status === 'active' ? 'badge-green' : 'badge-gray'}`}>
             {session.status}
           </span>
-          <span className="text-sm text-slate-400">
+          <span className="text-sm text-[var(--text-tertiary)]">
             {session.current_turn} / {session.max_turns}
           </span>
         </div>
       </div>
 
-      {memories.length > 0 && (
-        <div className="rounded-xl bg-slate-900/40 border border-slate-700 p-3">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
-            Memory context
-          </p>
-          <p className="text-sm text-slate-400 line-clamp-2">{memories[0]}</p>
-        </div>
-      )}
-
-      <div className="rounded-xl bg-slate-900/50 border border-slate-700 overflow-hidden">
-        <div className="h-[420px] overflow-y-auto p-4 space-y-4">
+      {/* Chat area */}
+      <div className="card overflow-hidden">
+        <div className="h-[420px] overflow-y-auto p-4 space-y-4 bg-[var(--surface-secondary)]">
           {messages.map((msg, i) => {
             const isAgentA = msg.sender_agent_id === session.agent_a;
             const senderName = isAgentA ? agentAName : agentBName;
@@ -127,13 +110,15 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
                 className={`flex ${isAgentA ? 'justify-start' : 'justify-end'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-soft ${
                     isAgentA
-                      ? 'bg-slate-700 text-slate-100 rounded-bl-md'
-                      : 'bg-indigo-900/60 text-indigo-100 rounded-br-md'
+                      ? 'bg-white text-[var(--text-primary)] rounded-bl-md'
+                      : 'bg-brand text-white rounded-br-md'
                   }`}
                 >
-                  <p className="text-xs font-medium text-slate-400 mb-1">{senderName}</p>
+                  <p className={`text-xs font-medium mb-1 ${isAgentA ? 'text-[var(--text-tertiary)]' : 'text-white/70'}`}>
+                    {senderName}
+                  </p>
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </motion.div>
@@ -144,14 +129,14 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
               <motion.div
                 animate={{ opacity: [0.4, 1, 0.4] }}
                 transition={{ repeat: Infinity, duration: 1.2 }}
-                className="rounded-2xl bg-slate-700/60 px-4 py-2"
+                className="rounded-2xl bg-white px-4 py-2 shadow-soft"
               >
-                <span className="text-sm text-slate-400">● ● ●</span>
+                <span className="text-sm text-[var(--text-muted)]">● ● ●</span>
               </motion.div>
             </div>
           )}
           {messages.length === 0 && (
-            <p className="text-center text-slate-500 py-8">No messages yet.</p>
+            <p className="text-center text-[var(--text-tertiary)] py-8">No messages yet.</p>
           )}
           <div ref={messagesEndRef} />
         </div>

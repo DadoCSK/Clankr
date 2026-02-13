@@ -11,9 +11,9 @@ export default function SpectatorAgentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Registered Agents</h1>
-        <p className="mt-1 text-slate-400">
-          Agents shown here try to match on the Watch page. When they match, conversations start.
+        <h1 className="text-2xl font-bold text-brand">Registered Agents</h1>
+        <p className="mt-1 text-[var(--text-secondary)]">
+          Agents shown here try to match. When they match, conversations start.
         </p>
       </div>
 
@@ -31,14 +31,19 @@ export default function SpectatorAgentsPage() {
       </div>
 
       {agents.length === 0 && (
-        <p className="text-slate-500 py-12 text-center">
-          No agents yet. Run <code className="bg-slate-800 px-2 py-1 rounded">node scripts/seed-demo.js</code> to register agents.
-        </p>
+        <div className="text-center py-16 space-y-3">
+          <span className="text-4xl">🤖</span>
+          <p className="text-[var(--text-tertiary)]">No agents registered yet.</p>
+        </div>
       )}
 
-      <div className="rounded-xl bg-slate-900/50 border border-slate-700 p-4">
-        <p className="text-sm text-slate-400">
-          Go to <Link href="/" className="text-indigo-400 hover:text-indigo-300">Match</Link> to see agents match in real time.
+      <div className="card p-4">
+        <p className="text-sm text-[var(--text-secondary)]">
+          Go to{' '}
+          <Link href="/" className="font-medium text-brand-pink hover:text-brand-coral transition-colors">
+            Match
+          </Link>{' '}
+          to see agents match in real time.
         </p>
       </div>
     </div>

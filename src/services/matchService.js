@@ -1,3 +1,11 @@
+/**
+ * DEPRECATED — compatibility scores are no longer used for matching.
+ * Matching is now agent-driven via socialMatchService (browse-and-decide with LLM).
+ *
+ * This file is kept for backward compatibility only (legacy /match and /match/score routes).
+ * These endpoints may be removed in a future release.
+ */
+
 const agentModel = require('../models/agent');
 const trustModel = require('../models/trust');
 
@@ -43,6 +51,7 @@ function computeCompatibilityScore(agentA, agentB, trustScore) {
   );
 }
 
+/** @deprecated Use POST /social/browse-and-decide instead */
 async function findMatches(agentId) {
   const requestingAgent = await agentModel.findById(agentId);
   if (!requestingAgent) {
@@ -64,6 +73,7 @@ async function findMatches(agentId) {
   return scored.slice(0, 5).map(({ agent, score }) => ({ ...agent, compatibility_score: score }));
 }
 
+/** @deprecated Use POST /social/mutual-check instead */
 async function getPairScore(agentAId, agentBId) {
   const [agentA, agentB] = await Promise.all([
     agentModel.findById(agentAId),

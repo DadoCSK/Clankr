@@ -32,72 +32,77 @@ export default function AgentCard({ agent, swipeDirection, isActive = true }: Ag
         rotate: swipeDirection === 'left' ? -15 : swipeDirection === 'right' ? 15 : 0,
       }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      className={`relative rounded-2xl border p-6 shadow-lg transition-colors ${
+      className={`relative rounded-2xl p-6 transition-all ${
         isActive
-          ? 'border-indigo-500/40 bg-slate-800/80 ring-2 ring-indigo-500/20'
-          : 'border-slate-700/80 bg-slate-800/50'
+          ? 'card-glow'
+          : 'card'
       }`}
     >
       <div className="flex items-start gap-4">
-        <span className="text-4xl">{getAvatar(agent.name)}</span>
+        {/* Avatar */}
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-tertiary)] text-2xl">
+          {getAvatar(agent.name)}
+        </span>
+
         <div className="flex-1 min-w-0">
+          {/* Name + badge */}
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="font-bold text-white text-lg">{agent.name}</h2>
+            <h2 className="font-bold text-[var(--text-primary)] text-lg">{agent.name}</h2>
             {badge && (
-              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-300">
-                {badge}
-              </span>
+              <span className="badge badge-amber">{badge}</span>
             )}
           </div>
-          {agent.description && (
-            <p className="mt-1 text-sm text-slate-400 line-clamp-2">{agent.description}</p>
+
+          {/* Bio */}
+          {(agent.bio || agent.description) && (
+            <p className="mt-1 text-sm text-[var(--text-secondary)] line-clamp-2">
+              {agent.bio || agent.description}
+            </p>
           )}
-          {agent.capabilities?.length ? (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {agent.capabilities.slice(0, 4).map((c) => (
-                <span
-                  key={c}
-                  className="rounded bg-emerald-900/40 px-2 py-0.5 text-xs text-emerald-300"
-                >
-                  {c}
-                </span>
+
+          {/* Hobbies */}
+          {agent.hobbies?.length ? (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {agent.hobbies.slice(0, 5).map((h) => (
+                <span key={h} className="badge badge-green">{h}</span>
               ))}
             </div>
           ) : null}
-          {agent.goals?.length ? (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {agent.goals.slice(0, 3).map((g) => (
-                <span
-                  key={g}
-                  className="rounded bg-slate-700/80 px-2 py-0.5 text-xs text-slate-300"
-                >
-                  {g}
-                </span>
+
+          {/* Personality traits */}
+          {agent.personality_traits?.length ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {agent.personality_traits.slice(0, 4).map((t) => (
+                <span key={t} className="badge badge-purple">{t}</span>
               ))}
             </div>
           ) : null}
+
+          {/* Reputation bar */}
           <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs text-slate-500">Reputation</span>
-            <div className="flex-1 h-1.5 rounded-full bg-slate-700 overflow-hidden max-w-[100px]">
+            <span className="text-xs text-[var(--text-tertiary)]">Reputation</span>
+            <div className="flex-1 h-1.5 rounded-full bg-[var(--surface-tertiary)] overflow-hidden max-w-[100px]">
               <motion.div
-                className="h-full bg-amber-500"
+                className="h-full rounded-full bg-brand"
                 initial={{ width: 0 }}
                 animate={{ width: `${repPercent}%` }}
                 transition={{ duration: 0.5 }}
               />
             </div>
-            <span className="text-xs text-amber-400">{repPercent}%</span>
+            <span className="text-xs font-medium text-brand-coral">{repPercent}%</span>
           </div>
         </div>
       </div>
+
+      {/* Swipe overlay */}
       {swipeDirection && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           className={`absolute inset-0 flex items-center justify-center rounded-2xl text-4xl font-bold ${
             swipeDirection === 'right'
-              ? 'bg-emerald-500/20 text-emerald-400'
-              : 'bg-red-500/20 text-red-400'
+              ? 'bg-emerald-50 text-emerald-600'
+              : 'bg-red-50 text-red-500'
           }`}
         >
           {swipeDirection === 'right' ? '✓ Match!' : '✗ Pass'}

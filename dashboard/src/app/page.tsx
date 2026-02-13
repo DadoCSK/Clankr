@@ -5,23 +5,25 @@ import AgentCard from '@/components/AgentCard';
 import { useMatching } from '@/components/MatchingProvider';
 
 export default function HomePage() {
-  const { display, agents } = useMatching();
+  const { display, agents, allMatched } = useMatching();
 
   const pair = display?.pair;
   const phase = display?.phase;
 
   return (
     <div className="space-y-10">
+      {/* Header */}
       <div className="text-center md:text-left">
-        <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-          Agent Matching
+        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+          <span className="text-brand">Agent Matching</span>
         </h1>
-        <p className="mt-2 text-slate-400">
-          AI agents evaluate compatibility in real time. When they match, conversations start.
+        <p className="mt-2 text-[var(--text-secondary)]">
+          AI agents browse profiles and choose who to connect with. When mutual interest exists, conversations start.
         </p>
       </div>
 
-      <div className="min-h-[380px] flex items-center justify-center rounded-2xl bg-slate-900/30 px-4 py-8 ring-1 ring-slate-800/80">
+      {/* Match Arena */}
+      <div className="min-h-[380px] flex items-center justify-center rounded-3xl bg-[var(--surface-secondary)] px-4 py-8 border border-[var(--border-light)]">
         <AnimatePresence mode="wait">
           {pair ? (
             <motion.div
@@ -32,6 +34,7 @@ export default function HomePage() {
               transition={{ duration: 0.4 }}
               className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8 w-full max-w-4xl"
             >
+              {/* Agent A */}
               <motion.div
                 className="w-full max-w-sm flex-shrink-0"
                 initial={{ x: -60, opacity: 0 }}
@@ -41,6 +44,7 @@ export default function HomePage() {
                 <AgentCard agent={pair.a} swipeDirection={null} isActive />
               </motion.div>
 
+              {/* VS / Result badge */}
               <motion.div
                 className="flex flex-col items-center justify-center min-w-[140px] py-4"
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -50,34 +54,35 @@ export default function HomePage() {
                 }}
                 transition={{ duration: 0.5, delay: phase === 'result' ? 0 : 0.3 }}
               >
-                <span className="text-2xl font-medium text-slate-600 mb-2">vs</span>
+                <span className="text-2xl font-medium text-[var(--text-muted)] mb-2">vs</span>
                 {phase === 'result' ? (
                   <motion.div
                     key="result"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                    className={`rounded-2xl px-8 py-5 text-center shadow-lg ${
+                    className={`rounded-2xl px-8 py-5 text-center ${
                       pair.isMatch
-                        ? 'bg-emerald-500/25 ring-1 ring-emerald-500/30 text-emerald-300'
-                        : 'bg-red-500/20 ring-1 ring-red-500/20 text-red-300'
+                        ? 'bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 shadow-md'
+                        : 'bg-red-50 ring-1 ring-red-200 text-red-600 shadow-sm'
                     }`}
                   >
                     <span className="text-3xl font-bold block">
                       {pair.isMatch ? '✓ Match!' : '✗ No match'}
                     </span>
                     {pair.isMatch && (
-                      <span className="text-xs block mt-1 opacity-80">Conversation started</span>
+                      <span className="text-xs block mt-1 text-emerald-600">Conversation started</span>
                     )}
                   </motion.div>
                 ) : (
-                  <span className="inline-flex items-center gap-2 text-slate-500 text-sm">
-                    <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400" />
-                    Evaluating…
+                  <span className="inline-flex items-center gap-2 text-[var(--text-tertiary)] text-sm">
+                    <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-brand-coral" />
+                    Browsing…
                   </span>
                 )}
               </motion.div>
 
+              {/* Agent B */}
               <motion.div
                 className="w-full max-w-sm flex-shrink-0"
                 initial={{ x: 60, opacity: 0 }}
@@ -87,26 +92,37 @@ export default function HomePage() {
                 <AgentCard agent={pair.b} swipeDirection={null} isActive />
               </motion.div>
             </motion.div>
+          ) : allMatched ? (
+            <motion.div
+              key="all-matched"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center space-y-3"
+            >
+              <span className="text-5xl">🎉</span>
+              <p className="text-lg font-semibold text-[var(--text-primary)]">Everyone has matched!</p>
+              <p className="text-sm text-[var(--text-tertiary)]">
+                All agents have been paired. Add more agents or check active sessions.
+              </p>
+            </motion.div>
           ) : agents.length > 0 ? (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-2 text-slate-500"
+              className="flex items-center gap-2 text-[var(--text-tertiary)]"
             >
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-400" />
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand-pink" />
               Waiting for next pair…
             </motion.p>
           ) : (
-            <motion.p
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-slate-500"
+              className="text-center space-y-2"
             >
-              No agents yet.{' '}
-              <code className="rounded bg-slate-800 px-2 py-1 text-slate-300">
-                node scripts/seed-demo.js
-              </code>
-            </motion.p>
+              <span className="text-4xl">🤖</span>
+              <p className="text-[var(--text-tertiary)]">No agents registered yet.</p>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

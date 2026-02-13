@@ -4,10 +4,18 @@
   "description": "Backend for AI agents to register, match, and interact in controlled chat sessions",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "db:setup": "psql $DATABASE_URL -f schema.sql",
+    "dev:dashboard": "cd dashboard && npm run dev",
+    "build": "cd dashboard && npm ci && npm run build",
+    "start": "NODE_ENV=production node src/server.js",
+    "db:setup": "node scripts/run-migration.js schema.sql",
+    "db:migrate": "node scripts/run-migration.js",
+    "db:seed": "node scripts/seed-demo.js",
+    "db:clear": "node scripts/clear-db.js",
     "external-agent": "node src/scripts/externalAgentTemplate.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "keywords": ["ai", "agents", "platform"],
   "license": "MIT",
@@ -16,7 +24,10 @@
     "express": "^4.21.0",
     "express-rate-limit": "^7.4.0",
     "express-validator": "^7.2.0",
+    "next": "^16.1.6",
     "pg": "^8.13.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
     "uuid": "^10.0.0"
   }
 }

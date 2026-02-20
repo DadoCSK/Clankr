@@ -6,6 +6,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
   const expressApp = require('./app');
+  expressApp.set('trust proxy', 1);
+  
   const db = require('./db');
   const backgroundMatchService = require('./services/backgroundMatchService');
 

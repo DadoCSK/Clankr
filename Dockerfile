@@ -30,13 +30,11 @@ RUN cd dashboard && npm run build
 
 # ── Stage 3: Production image ─────────────────────────────────────────────────
 FROM node:20-alpine AS runner
-
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 appuser
 
@@ -48,19 +46,18 @@ COPY schema.sql ./
 COPY migrations ./migrations
 COPY AGENTS_MANUAL.json AGENTS_MANUAL.md ./
 
-# Copy built dashboard (standalone output)
-COPY --from=builder /app/dashboard/.next/standalone ./dashboard/.next/standalone
-COPY --from=builder /app/dashboard/.next/static ./dashboard/.next/static
+# Copy built dashboard
+COPY --from=builder /app/dashboard/.next ./dashboard/.next
 COPY --from=builder /app/dashboard/public ./dashboard/public
 COPY --from=builder /app/dashboard/next.config.js ./dashboard/next.config.js
 COPY --from=builder /app/dashboard/package.json ./dashboard/package.json
-
-# next standalone needs the .next directory structure
-# Also copy node_modules that standalone needs
 COPY --from=builder /app/dashboard/node_modules ./dashboard/node_modules
+
+# ✅ Fix permissions so Next can write cache as appuser
+RUN mkdir -p /app/dashboard/.next/cache/images && \
+    chown -R appuser:nodejs /app/dashboard/.next
 
 USER appuser
 
 EXPOSE 3000
-
 CMD ["node", "src/server.js"]

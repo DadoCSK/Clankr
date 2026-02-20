@@ -51,8 +51,17 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
 
   if (loading) {
     return (
-      <div className="card p-12 text-center text-[var(--text-tertiary)]">
-        Loading session…
+      <div className="space-y-4">
+        {/* Skeleton loader for session */}
+        <div className="skeleton h-5 w-32" />
+        <div className="skeleton h-8 w-64" />
+        <div className="card overflow-hidden">
+          <div className="h-[60vh] sm:h-[420px] p-4 space-y-4 bg-[var(--surface-secondary)]">
+            <div className="flex justify-start"><div className="skeleton h-16 w-48 rounded-2xl" /></div>
+            <div className="flex justify-end"><div className="skeleton h-16 w-52 rounded-2xl" /></div>
+            <div className="flex justify-start"><div className="skeleton h-16 w-40 rounded-2xl" /></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -60,7 +69,7 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
   if (!session) {
     return (
       <div className="space-y-4">
-        <Link href="/spectator/sessions" className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+        <Link href="/spectator/sessions" className="inline-flex items-center gap-1 text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]">
           ← Back to sessions
         </Link>
         <div className="rounded-2xl bg-red-50 border border-red-200 p-6 text-red-700">
@@ -75,14 +84,14 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
   const messages = session.messages || [];
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <Link href="/spectator/sessions" className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+    <div className="space-y-4 sm:space-y-6 max-w-3xl">
+      <Link href="/spectator/sessions" className="inline-flex items-center gap-1 text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]">
         ← Back to sessions
       </Link>
 
-      {/* Session header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-xl font-bold text-[var(--text-primary)]">
+      {/* Session header — stacks on small screens */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <h1 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] leading-tight">
           {agentAName} <span className="text-brand-coral">↔</span> {agentBName}
         </h1>
         <div className="flex items-center gap-3">
@@ -95,9 +104,9 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
         </div>
       </div>
 
-      {/* Chat area */}
+      {/* Chat area — taller on mobile to fill screen */}
       <div className="card overflow-hidden">
-        <div className="h-[420px] overflow-y-auto p-4 space-y-4 bg-[var(--surface-secondary)]">
+        <div className="h-[60vh] sm:h-[420px] overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-[var(--surface-secondary)]">
           {messages.map((msg, i) => {
             const isAgentA = msg.sender_agent_id === session.agent_a;
             const senderName = isAgentA ? agentAName : agentBName;
@@ -110,16 +119,16 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
                 className={`flex ${isAgentA ? 'justify-start' : 'justify-end'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-soft ${
+                  className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-3.5 py-2.5 sm:px-4 shadow-soft ${
                     isAgentA
                       ? 'bg-white text-[var(--text-primary)] rounded-bl-md'
                       : 'bg-brand text-white rounded-br-md'
                   }`}
                 >
-                  <p className={`text-xs font-medium mb-1 ${isAgentA ? 'text-[var(--text-tertiary)]' : 'text-white/70'}`}>
+                  <p className={`text-[11px] sm:text-xs font-medium mb-1 ${isAgentA ? 'text-[var(--text-tertiary)]' : 'text-white/70'}`}>
                     {senderName}
                   </p>
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  <p className="text-[13px] sm:text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                 </div>
               </motion.div>
             );
@@ -136,7 +145,7 @@ export default function SpectatorSessionView({ sessionId }: { sessionId: string 
             </div>
           )}
           {messages.length === 0 && (
-            <p className="text-center text-[var(--text-tertiary)] py-8">No messages yet.</p>
+            <p className="text-center text-[var(--text-tertiary)] py-8 text-sm">No messages yet.</p>
           )}
           <div ref={messagesEndRef} />
         </div>

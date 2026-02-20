@@ -44,21 +44,44 @@
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-2xl: 24px;
+
+  /* Bottom nav height — used for safe-area padding on pages */
+  --bottom-nav-height: 64px;
 }
 
 /* ── Base layer ───────────────────────────────────────────────── */
 @layer base {
+  html {
+    /* Prevent iOS text-size adjustment on orientation change */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Smooth scrolling for anchor links */
+    scroll-behavior: smooth;
+  }
+
   body {
     background: var(--surface-bg);
     color: var(--text-primary);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    /* Prevent horizontal overflow on mobile */
+    overflow-x: hidden;
+    /* Minimum font size 16px prevents iOS zoom on input focus */
+    font-size: 16px;
+    line-height: 1.5;
   }
 
-  /* Smooth scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 100px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  /* Improve tap highlight on mobile */
+  * {
+    -webkit-tap-highlight-color: rgba(253, 41, 123, 0.1);
+  }
+
+  /* Smooth scrollbar (desktop only) */
+  @media (min-width: 768px) {
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 100px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  }
 }
 
 /* ── Component utilities ──────────────────────────────────────── */
@@ -87,13 +110,14 @@
     border-radius: calc(var(--radius-lg) - 1.5px);
   }
 
-  /* Brand button */
+  /* Brand button — touch-friendly min height */
   .btn-brand {
     background: var(--brand-gradient);
     color: #fff;
     font-weight: 600;
     border-radius: var(--radius-md);
-    padding: 0.5rem 1.25rem;
+    padding: 0.625rem 1.25rem;
+    min-height: 44px;
     box-shadow: var(--shadow-glow);
     transition: all 0.2s ease;
   }
@@ -104,6 +128,7 @@
   }
   .btn-brand:active {
     transform: translateY(0);
+    filter: brightness(0.96);
   }
   .btn-brand:focus-visible {
     outline: none;
@@ -118,9 +143,11 @@
     box-shadow: var(--shadow-sm);
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
   }
-  .card:hover {
-    box-shadow: var(--shadow-md);
-    border-color: var(--border-medium);
+  @media (min-width: 768px) {
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-medium);
+    }
   }
 
   /* Card with gradient glow */
@@ -131,17 +158,21 @@
     box-shadow: var(--shadow-glow);
     transition: box-shadow 0.2s ease;
   }
-  .card-glow:hover {
-    box-shadow: var(--shadow-glow-lg);
+  @media (min-width: 768px) {
+    .card-glow:hover {
+      box-shadow: var(--shadow-glow-lg);
+    }
   }
 
-  /* Input field */
+  /* Input field — 16px minimum prevents iOS zoom */
   .input {
     width: 100%;
     border-radius: var(--radius-md);
     background: var(--surface-secondary);
     border: 1px solid var(--border-light);
-    padding: 0.625rem 1rem;
+    padding: 0.75rem 1rem;
+    min-height: 44px;
+    font-size: 16px;
     color: var(--text-primary);
     transition: all 0.2s ease;
   }
@@ -162,6 +193,7 @@
     font-weight: 500;
     border-radius: 100px;
     line-height: 1.5;
+    white-space: nowrap;
   }
   .badge-pink   { background: #FFF0F3; color: #D6336C; }
   .badge-orange { background: #FFF4ED; color: #E8590C; }
@@ -174,6 +206,19 @@
   /* Status dot */
   .status-active { color: #059669; }
   .status-ended  { color: var(--text-muted); }
+
+  /* Skeleton loader */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-secondary) 25%, var(--surface-tertiary) 50%, var(--surface-secondary) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* ── Focus ring (accessibility) ───────────────────────────────── */
@@ -181,5 +226,14 @@
   .focus-brand:focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
+  }
+
+  /* Hide scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Safe area padding for bottom nav on mobile */
+  .pb-safe {
+    padding-bottom: calc(var(--bottom-nav-height) + 16px);
   }
 }

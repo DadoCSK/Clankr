@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Agent } from '@/lib/api';
 
 const AVATARS = ['🤖', '🧠', '⚡', '🔮', '🌟', '💡', '🎯', '🔧'];
@@ -14,13 +15,18 @@ interface AgentCardProps {
   agent: Agent;
   swipeDirection?: 'left' | 'right' | null;
   isActive?: boolean;
+  /** Compact mode hides details behind an expand toggle (used in grids) */
+  compact?: boolean;
 }
 
-export default function AgentCard({ agent, swipeDirection, isActive = true }: AgentCardProps) {
+export default function AgentCard({ agent, swipeDirection, isActive = true, compact = false }: AgentCardProps) {
+  const [expanded, setExpanded] = useState(false);
   const rep = agent.reputation_score ?? 0.5;
   const repPercent = Math.round(rep * 100);
   const badge =
     rep >= 0.8 ? '⭐ Top' : rep >= 0.6 ? '✓ Good' : rep >= 0.4 ? '·' : null;
+
+  const hasDetails = (agent.hobbies?.length ?? 0) > 0 || (agent.personality_traits?.length ?? 0) > 0;
 
   return (
     <motion.div
@@ -32,22 +38,20 @@ export default function AgentCard({ agent, swipeDirection, isActive = true }: Ag
         rotate: swipeDirection === 'left' ? -15 : swipeDirection === 'right' ? 15 : 0,
       }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      className={`relative rounded-2xl p-6 transition-all ${
-        isActive
-          ? 'card-glow'
-          : 'card'
+      className={`relative rounded-2xl p-4 sm:p-6 transition-all ${
+        isActive ? 'card-glow' : 'card'
       }`}
     >
-      <div className="flex items-start gap-4">
-        {/* Avatar */}
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-tertiary)] text-2xl">
+      <div className="flex items-start gap-3 sm:gap-4">
+        {/* Avatar — smaller on mobile */}
+        <span className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-[var(--surface-tertiary)] text-xl sm:text-2xl flex-shrink-0">
           {getAvatar(agent.name)}
         </span>
 
         <div className="flex-1 min-w-0">
           {/* Name + badge */}
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="font-bold text-[var(--text-primary)] text-lg">{agent.name}</h2>
+            <h2 className="font-bold text-[var(--text-primary)] text-base sm:text-lg leading-tight">{agent.name}</h2>
             {badge && (
               <span className="badge badge-amber">{badge}</span>
             )}
@@ -60,27 +64,59 @@ export default function AgentCard({ agent, swipeDirection, isActive = true }: Ag
             </p>
           )}
 
-          {/* Hobbies */}
-          {agent.hobbies?.length ? (
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {agent.hobbies.slice(0, 5).map((h) => (
-                <span key={h} className="badge badge-green">{h}</span>
-              ))}
-            </div>
-          ) : null}
+          {/* On compact mode, show expand toggle for details */}
+          {compact && hasDetails && !expanded && (
+            <button
+              onClick={() => setExpanded(true)}
+              className="mt-2 text-xs font-medium text-brand-pink hover:text-brand-coral transition-colors min-h-[32px] flex items-center"
+            >
+              Show more
+            </button>
+          )}
 
-          {/* Personality traits */}
-          {agent.personality_traits?.length ? (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {agent.personality_traits.slice(0, 4).map((t) => (
-                <span key={t} className="badge badge-purple">{t}</span>
-              ))}
-            </div>
-          ) : null}
+          {/* Details section — always visible in non-compact, toggleable in compact */}
+          <AnimatePresence initial={false}>
+            {(!compact || expanded) && hasDetails && (
+              <motion.div
+                initial={compact ? { height: 0, opacity: 0 } : false}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                {/* Hobbies */}
+                {agent.hobbies?.length ? (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {agent.hobbies.slice(0, 5).map((h) => (
+                      <span key={h} className="badge badge-green">{h}</span>
+                    ))}
+                  </div>
+                ) : null}
+
+                {/* Personality traits */}
+                {agent.personality_traits?.length ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {agent.personality_traits.slice(0, 4).map((t) => (
+                      <span key={t} className="badge badge-purple">{t}</span>
+                    ))}
+                  </div>
+                ) : null}
+
+                {compact && (
+                  <button
+                    onClick={() => setExpanded(false)}
+                    className="mt-2 text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors min-h-[32px] flex items-center"
+                  >
+                    Show less
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Reputation bar */}
           <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs text-[var(--text-tertiary)]">Reputation</span>
+            <span className="text-xs text-[var(--text-tertiary)]">Rep</span>
             <div className="flex-1 h-1.5 rounded-full bg-[var(--surface-tertiary)] overflow-hidden max-w-[100px]">
               <motion.div
                 className="h-full rounded-full bg-brand"
@@ -99,7 +135,7 @@ export default function AgentCard({ agent, swipeDirection, isActive = true }: Ag
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className={`absolute inset-0 flex items-center justify-center rounded-2xl text-4xl font-bold ${
+          className={`absolute inset-0 flex items-center justify-center rounded-2xl text-3xl sm:text-4xl font-bold ${
             swipeDirection === 'right'
               ? 'bg-emerald-50 text-emerald-600'
               : 'bg-red-50 text-red-500'

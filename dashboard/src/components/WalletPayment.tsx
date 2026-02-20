@@ -12,7 +12,6 @@ import {
   type MatchPermissionStatus,
 } from '@/lib/api';
 
-// ── Phantom wallet types (injected by the Phantom browser extension) ─────────
 interface PhantomProvider {
   isPhantom?: boolean;
   publicKey: { toString(): string } | null;
@@ -28,14 +27,12 @@ declare global {
   }
 }
 
-// ── Props ────────────────────────────────────────────────────────────────────
 interface WalletPaymentProps {
   agentId: string;
   agentName: string;
   onPurchaseComplete?: () => void;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
 const SOL_DECIMALS = 1_000_000_000;
 
 function lamportsToSol(lamports: number): string {
@@ -50,17 +47,15 @@ function formatTimeRemaining(dateStr: string): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
 export default function WalletPayment({ agentId, agentName, onPurchaseComplete }: WalletPaymentProps) {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
   const [status, setStatus] = useState<MatchPermissionStatus | null>(null);
   const [loading, setLoading] = useState(false);
-  const [txLoading, setTxLoading] = useState<string | null>(null); // plan id being purchased
+  const [txLoading, setTxLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // ── Load pricing and status ────────────────────────────────────────────────
   const refreshStatus = useCallback(async () => {
     try {
       const [p, s] = await Promise.all([
@@ -79,7 +74,6 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
     refreshStatus();
   }, [refreshStatus]);
 
-  // ── Connect Phantom wallet ─────────────────────────────────────────────────
   const connectWallet = async () => {
     setError(null);
     setSuccess(null);
@@ -96,7 +90,6 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
       const address = resp.publicKey.toString();
       setWalletAddress(address);
 
-      // Link wallet to agent on backend
       await linkWallet(agentId, address);
       await refreshStatus();
       setSuccess('Wallet connected!');
@@ -107,7 +100,6 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
     }
   };
 
-  // ── Disconnect wallet ──────────────────────────────────────────────────────
   const disconnectWallet = async () => {
     const provider = window.solana;
     if (provider) {
@@ -118,7 +110,6 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
     setError(null);
   };
 
-  // ── Send SOL and verify ────────────────────────────────────────────────────
   const purchasePlan = async (plan: PricingPlan) => {
     setError(null);
     setSuccess(null);
@@ -137,7 +128,6 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
     try {
       setTxLoading(plan.id);
 
-      // Dynamically import @solana/web3.js (tree-shake friendly)
       const { Connection, PublicKey, Transaction, SystemProgram } = await import('@solana/web3.js');
 
       const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
@@ -149,7 +139,6 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
       const fromPubkey = new PublicKey(walletAddress);
       const toPubkey = new PublicKey(pricing.treasury_wallet);
 
-      // Build the transaction
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey,
@@ -162,20 +151,16 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
       const { blockhash } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
 
-      // Sign with Phantom
       const signed = await provider.signTransaction(transaction);
 
-      // Send the raw transaction
       const serialized = (signed as { serialize(): Buffer }).serialize();
       const signature = await connection.sendRawTransaction(serialized, {
         skipPreflight: false,
         preflightCommitment: 'confirmed',
       });
 
-      // Wait for confirmation
       await connection.confirmTransaction(signature, 'confirmed');
 
-      // Verify on backend
       const result = await verifyPayment(agentId, signature, plan.id);
       setSuccess(result.message);
       await refreshStatus();
@@ -188,17 +173,16 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="card p-5 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="card p-4 sm:p-5 space-y-4 sm:space-y-5">
+      {/* Header — stacks on mobile */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Match Credits</h3>
+          <h3 className="text-base sm:text-lg font-semibold">Match Credits</h3>
           <p className="text-sm text-[var(--text-tertiary)]">for {agentName}</p>
         </div>
         {status && (
-          <div className="text-right">
+          <div className="sm:text-right">
             {status.is_premium ? (
               <span className="badge badge-purple">
                 Premium — {formatTimeRemaining(status.premium_until!)}
@@ -238,24 +222,24 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
       )}
 
       {/* Devnet notice */}
-      <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700 flex items-center gap-2">
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+      <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700 flex items-start gap-2">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0 mt-1" />
         <span>Solana Devnet — use free test SOL. Make sure Phantom is set to <strong>Devnet</strong>.</span>
       </div>
 
       {/* Wallet connection */}
       <div className="border-t border-[var(--border-light)] pt-4">
         {walletAddress ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-              <span className="text-sm font-mono text-[var(--text-secondary)]">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0" />
+              <span className="text-sm font-mono text-[var(--text-secondary)] truncate">
                 {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
               </span>
             </div>
             <button
               onClick={disconnectWallet}
-              className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors min-h-[44px] px-2"
             >
               Disconnect
             </button>
@@ -264,7 +248,7 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
           <button
             onClick={connectWallet}
             disabled={loading}
-            className="btn-brand w-full flex items-center justify-center gap-2 text-sm py-2.5"
+            className="btn-brand w-full flex items-center justify-center gap-2 text-sm py-3"
           >
             {loading ? (
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -281,17 +265,17 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
         )}
       </div>
 
-      {/* Plans */}
+      {/* Plans — full-width stacked on small mobile, 2-col on larger */}
       {walletAddress && pricing && (
         <div className="space-y-3 border-t border-[var(--border-light)] pt-4">
           <p className="text-sm font-medium text-[var(--text-secondary)]">Get more matches</p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
             {pricing.plans.map((plan) => (
               <button
                 key={plan.id}
                 onClick={() => purchasePlan(plan)}
                 disabled={txLoading !== null}
-                className={`relative group rounded-xl border p-4 text-left transition-all hover:border-[var(--brand-pink)] hover:shadow-[var(--shadow-glow)] ${
+                className={`relative group rounded-xl border p-4 text-left transition-all min-h-[72px] hover:border-[var(--brand-pink)] hover:shadow-[var(--shadow-glow)] ${
                   txLoading === plan.id
                     ? 'border-[var(--brand-pink)] bg-[#FFF0F3]'
                     : 'border-[var(--border-light)] bg-[var(--surface-secondary)]'
@@ -320,7 +304,7 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
+            className="rounded-xl bg-red-50 border border-red-200 px-3 sm:px-4 py-3 text-sm text-red-700"
           >
             {error}
           </motion.div>
@@ -331,7 +315,7 @@ export default function WalletPayment({ agentId, agentName, onPurchaseComplete }
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700"
+            className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 sm:px-4 py-3 text-sm text-emerald-700"
           >
             {success}
           </motion.div>

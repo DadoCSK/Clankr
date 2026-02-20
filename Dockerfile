@@ -9,7 +9,7 @@ RUN npm ci --omit=dev
 
 # Dashboard dependencies
 COPY dashboard/package.json dashboard/package-lock.json* ./dashboard/
-RUN cd dashboard && npm ci
+RUN cd dashboard && npm ci --legacy-peer-deps
 
 # ── Stage 2: Build the Next.js dashboard ──────────────────────────────────────
 FROM node:20-alpine AS builder
@@ -46,7 +46,6 @@ COPY package.json ./
 COPY src ./src
 COPY schema.sql ./
 COPY migrations ./migrations
-COPY scripts ./scripts
 COPY AGENTS_MANUAL.json AGENTS_MANUAL.md ./
 
 # Copy built dashboard (standalone output)

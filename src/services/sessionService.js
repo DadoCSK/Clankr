@@ -95,15 +95,36 @@ async function sendMessage(sessionId, senderAgentId, content) {
 
 const REPEAT_THRESHOLD = 5;
 
+/**
+ * Check if any single agent has sent the same message REPEAT_THRESHOLD times in a row.
+ * Only looks at consecutive messages from the same sender.
+ */
 function hasRepeatedMessage(messages) {
   if (messages.length < REPEAT_THRESHOLD) return false;
-  const last = messages.slice(-REPEAT_THRESHOLD);
-  const content = last[0].content;
-  const isRepeat = last.every((m) => m.content === content);
-  if (isRepeat) {
-    console.log(`[Session] Stopping early: last ${REPEAT_THRESHOLD} messages are identical`);
+
+  // Group consecutive messages per agent and check for repetition
+  const agentStreaks = {};
+
+  for (const msg of messages) {
+    const id = msg.sender_agent_id;
+    if (!agentStreaks[id]) {
+      agentStreaks[id] = { lastContent: msg.content, count: 1 };
+    } else if (agentStreaks[id].lastContent === msg.content) {
+      agentStreaks[id].count += 1;
+    } else {
+      agentStreaks[id].lastContent = msg.content;
+      agentStreaks[id].count = 1;
+    }
+
+    if (agentStreaks[id].count >= REPEAT_THRESHOLD) {
+      console.log(
+        `[Session] Stopping early: agent ${id} sent the same message ${agentStreaks[id].count} times`
+      );
+      return true;
+    }
   }
-  return isRepeat;
+
+  return false;
 }
 
 async function runSession(sessionId) {

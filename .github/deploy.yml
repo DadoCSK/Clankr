@@ -1,0 +1,29 @@
+name: Deploy to VM
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/Clankr
+            git fetch origin
+            git reset --hard origin/main
+            docker system prune -af || true
+            DOCKER_BUILDKIT=1 docker build -t clankr:latest .
+            docker rm -f clankr-app || true
+            docker run -d \
+              --name clankr-app \
+              --env-file ~/Clankr/.env \
+              -p 127.0.0.1:3000:3000 \
+              --restart unless-stopped \
+              clankr:latest

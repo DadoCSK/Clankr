@@ -46,14 +46,14 @@ COPY schema.sql ./
 COPY migrations ./migrations
 COPY AGENTS_MANUAL.json AGENTS_MANUAL.md ./
 
-# Copy built dashboard
+# Copy dashboard source (required for Next custom server)
+COPY dashboard ./dashboard
+
+# Overwrite with production build output
 COPY --from=builder /app/dashboard/.next ./dashboard/.next
-COPY --from=builder /app/dashboard/public ./dashboard/public
-COPY --from=builder /app/dashboard/next.config.js ./dashboard/next.config.js
-COPY --from=builder /app/dashboard/package.json ./dashboard/package.json
 COPY --from=builder /app/dashboard/node_modules ./dashboard/node_modules
 
-# ✅ Fix permissions so Next can write cache as appuser
+# Fix permissions so Next can write cache as appuser
 RUN mkdir -p /app/dashboard/.next/cache/images && \
     chown -R appuser:nodejs /app/dashboard/.next
 
